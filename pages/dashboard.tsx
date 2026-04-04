@@ -13,14 +13,23 @@ export default function DashboardPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [role, setRole] = useState<string | null>(null);
-  const [summary, setSummary] = useState({ 
-    total_income: 0, 
-    total_expense: 0, 
+  const [summary, setSummary] = useState({
+    total_income: 0,
+    total_expense: 0,
     net_balance: 0,
     tx_count: 0,
     avg_expense: 0,
     highest_expense_category: "None"
   });
+  const [adminInsights, setAdminInsights] = useState<{
+    highest_transaction_30d: any | null;
+    top_5_expenses: any[];
+    expense_to_income_ratio: number;
+    unusual_transactions: any[];
+    total_income: number;
+    net_balance: number;
+    recent_transactions: any[];
+  } | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
   const [trends, setTrends] = useState<any[]>([]);
   const [weeklyTrends, setWeeklyTrends] = useState<any[]>([]);
@@ -38,21 +47,34 @@ export default function DashboardPage() {
 
   const load = async () => {
     try {
-      const [meRes, summaryRes, categoryRes, trendsRes, weeklyRes, recentRes] = await Promise.all([
-        api.get("/auth/me"),
+      const meRes = await api.get("/auth/me");
+      const userRole = meRes.data.role;
+      setRole(userRole);
+
+      const requests: any[] = [
         api.get("/dashboard/summary"),
         api.get("/dashboard/category-breakdown"),
         api.get("/dashboard/monthly-trends"),
         api.get("/dashboard/weekly-trends"),
         api.get("/dashboard/recent-activity"),
-      ]);
+      ];
 
-      setRole(meRes.data.role);
-      setSummary(summaryRes.data.data);
-      setCategories(categoryRes.data.data);
-      setTrends(trendsRes.data.data);
-      setWeeklyTrends(weeklyRes.data.data);
-      setRecent(recentRes.data.data);
+      // Admin & Analyst get platform-wide insights
+      if (userRole !== "viewer") {
+        requests.push(api.get("/dashboard/admin-insights"));
+      }
+
+      const results = await Promise.all(requests);
+      
+      setSummary(results[0].data.data);
+      setCategories(results[1].data.data);
+      setTrends(results[2].data.data);
+      setWeeklyTrends(results[3].data.data);
+      setRecent(results[4].data.data);
+
+      if (userRole !== "viewer" && results[5]) {
+        setAdminInsights(results[5].data.data);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -62,14 +84,14 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100 text-slate-500">
+      <div className="flex min-h-screen items-center justify-center bg-gray-950 text-gray-400">
         Loading Dashboard...
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-100">
+    <main className="min-h-screen bg-gray-950 pb-20">
       <Navbar role={role} />
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-6">
         <DashboardCards
@@ -81,46 +103,127 @@ export default function DashboardPage() {
           highestExpenseCategory={summary.highest_expense_category}
         />
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className="h-80 rounded-lg bg-white p-4 shadow-sm relative">
+        {adminInsights && (role === "admin" || role === "analyst") && (
+          <section className="mb-6">
+            <h2 className="mb-3 text-lg font-bold text-gray-200">Platform Insights</h2>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-4">
+                <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-gray-900 to-gray-800 p-5 shadow-lg shadow-gray-900/50">
+                  <p className="text-xs font-medium text-gray-400 uppercase tracking-widest">Total Income</p>
+                  <p className="mt-2 text-2xl font-bold text-emerald-400">${adminInsights.total_income.toLocaleString()}</p>
+                </div>
+                <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-gray-900 to-gray-800 p-5 shadow-lg shadow-gray-900/50">
+                  <p className="text-xs font-medium text-gray-400 uppercase tracking-widest">Platform Net Balance</p>
+                  <p className="mt-2 text-2xl font-bold text-indigo-400">${adminInsights.net_balance.toLocaleString()}</p>
+                </div>
+                <div className="rounded-xl border border-gray-700 bg-gradient-to-br from-gray-900 to-gray-800 p-5 shadow-lg shadow-gray-900/50">
+                  <p className="text-xs font-medium text-gray-400 uppercase tracking-widest">Expense/Income Ratio</p>
+                  <p className="mt-2 text-2xl font-bold text-amber-400">{adminInsights.expense_to_income_ratio.toFixed(2)}x</p>
+                </div>
+                <div className="col-span-1 sm:col-span-2 rounded-xl border border-gray-700 bg-gradient-to-br from-gray-900 to-gray-800 p-5 shadow-lg shadow-gray-900/50">
+                  <p className="text-xs font-medium text-gray-400 uppercase tracking-widest">Highest Transaction (30d)</p>
+                  {adminInsights.highest_transaction_30d ? (
+                    <div className="mt-2 flex items-center justify-between">
+                      <p className="text-2xl font-bold text-white">${adminInsights.highest_transaction_30d.amount.toLocaleString()}</p>
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-gray-300">{adminInsights.highest_transaction_30d.category}</p>
+                        <p className="text-xs text-gray-500">{new Date(adminInsights.highest_transaction_30d.date).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-gray-500">No transactions in the last 30 days</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-lg overflow-hidden">
+                  <h3 className="mb-4 text-sm font-semibold text-gray-300">Top 5 Expense Transactions</h3>
+                  <div className="divide-y divide-gray-800">
+                    {adminInsights.top_5_expenses.map((tx: any, idx: number) => (
+                      <div key={`exp-${idx}`} className="flex justify-between py-3">
+                        <div>
+                          <p className="font-medium text-gray-200">{tx.category}</p>
+                          <p className="text-xs text-gray-500">{new Date(tx.date).toLocaleDateString()}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-rose-400">-${tx.amount.toLocaleString()}</p>
+                          <p className="text-xs text-gray-500 truncate w-32">{tx.description || "No notes"}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-lg overflow-hidden">
+                  <h3 className="mb-4 text-sm font-semibold text-gray-300">Unusual High-Value Transactions (&gt;$1k)</h3>
+                  <div className="divide-y divide-gray-800 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                    {adminInsights.unusual_transactions.length > 0 ? adminInsights.unusual_transactions.map((tx: any, idx: number) => (
+                      <div key={`unusual-${idx}`} className="flex justify-between py-3">
+                        <div>
+                          <p className="font-medium text-gray-200">{tx.category}</p>
+                          <p className="text-xs text-gray-500 truncate w-32">{tx.description || "No notes"}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`font-bold ${tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {tx.type === 'income' ? '+' : '-'}${tx.amount.toLocaleString()}
+                          </p>
+                          <p className="text-xs text-gray-500">{new Date(tx.date).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                    )) : (
+                      <p className="text-sm text-gray-500 italic py-4 text-center">No unusual transactions found</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="h-80 rounded-xl bg-gray-900 border border-gray-800 p-4 shadow-xl relative">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-slate-700">Income vs Expense Trends</h2>
+              <h2 className="text-sm font-semibold text-gray-300">Income vs Expense Trends</h2>
               <button
                 onClick={() => setShowWeekly(!showWeekly)}
-                className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1 rounded"
+                className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 px-3 py-1.5 rounded-lg transition-colors"
               >
                 {showWeekly ? "Show Monthly" : "Show Weekly"}
               </button>
             </div>
             <ResponsiveContainer width="100%" height="85%">
               <LineChart data={showWeekly ? weeklyTrends : trends}>
-                <XAxis dataKey={showWeekly ? "week" : "month"} />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="income" stroke="#16a34a" strokeWidth={2} />
-                <Line type="monotone" dataKey="expense" stroke="#dc2626" strokeWidth={2} />
+                <XAxis stroke="#9ca3af" dataKey={showWeekly ? "week" : "month"} />
+                <YAxis stroke="#9ca3af" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: "#1f2937", borderColor: "#374151", color: "#f3f4f6" }}
+                  itemStyle={{ color: "#e5e7eb" }}
+                />
+                <Line type="monotone" dataKey="income" stroke="#10b981" strokeWidth={3} dot={{ fill: '#064e3b' }} />
+                <Line type="monotone" dataKey="expense" stroke="#f43f5e" strokeWidth={3} dot={{ fill: '#881337' }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="h-80 rounded-lg bg-white p-4 shadow-sm">
-            <h2 className="mb-3 text-sm font-semibold text-slate-700">Category Breakdown</h2>
+          <div className="h-80 rounded-xl bg-gray-900 border border-gray-800 p-4 shadow-xl">
+            <h2 className="mb-3 text-sm font-semibold text-gray-300">Category Breakdown</h2>
             <ResponsiveContainer width="100%" height="90%">
               <PieChart>
-                <Pie data={categories} dataKey="total" nameKey="category" outerRadius={100} label>
+                <Pie data={categories} dataKey="total" nameKey="category" outerRadius={100} stroke="#1f2937" label>
                   {categories.map((entry, index) => (
                     <Cell key={`cell-${entry.category}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: "#1f2937", borderColor: "#374151", color: "#f3f4f6" }}
+                  itemStyle={{ color: "#e5e7eb" }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {role !== "viewer" && (
-          <section>
-            <h2 className="mb-3 text-lg font-semibold text-slate-800">Recent Transactions</h2>
+          <section className="mt-8">
+            <h2 className="mb-3 text-lg font-bold text-gray-200">Recent Transactions</h2>
             <TransactionTable transactions={recent} />
           </section>
         )}
