@@ -49,14 +49,15 @@ export default function UsersPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-100">
+    <main className="min-h-screen bg-gray-950 pb-20">
       <Navbar role={role} />
-      <div className="mx-auto max-w-6xl space-y-4 px-4 py-6">
-        <form onSubmit={createUser} className="grid grid-cols-1 gap-3 rounded-lg bg-white p-4 shadow-sm md:grid-cols-5">
+      <div className="mx-auto max-w-6xl space-y-6 px-4 py-6">
+        <h2 className="text-xl font-bold text-gray-200">Manage Users</h2>
+        <form onSubmit={createUser} className="grid grid-cols-1 gap-3 rounded-xl border border-gray-800 bg-gray-900 p-5 shadow-lg md:grid-cols-5">
           <input
             required
             placeholder="Name"
-            className="rounded-md border border-slate-300 px-3 py-2"
+            className="rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-gray-200 placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
@@ -64,7 +65,7 @@ export default function UsersPage() {
             required
             type="email"
             placeholder="Email"
-            className="rounded-md border border-slate-300 px-3 py-2"
+            className="rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-gray-200 placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
           />
@@ -72,12 +73,12 @@ export default function UsersPage() {
             required
             type="password"
             placeholder="Password"
-            className="rounded-md border border-slate-300 px-3 py-2"
+            className="rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-gray-200 placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
           />
           <select
-            className="rounded-md border border-slate-300 px-3 py-2"
+            className="rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-gray-200 focus:border-indigo-500 focus:outline-none"
             value={form.role_name}
             onChange={(e) => setForm({ ...form, role_name: e.target.value })}
           >
@@ -85,38 +86,46 @@ export default function UsersPage() {
             <option value="analyst">Analyst</option>
             <option value="admin">Admin</option>
           </select>
-          <button type="submit" className="rounded-md bg-slate-900 px-4 py-2 text-white">
-            Create
+          <button type="submit" className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700 transition-colors">
+            Create User
           </button>
         </form>
 
-        <div className="overflow-x-auto rounded-lg bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-xl border border-gray-800 bg-gray-900 shadow-lg">
           <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-left text-slate-600">
+            <thead className="border-b border-gray-800 bg-gray-800/50 text-left text-gray-400">
               <tr>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Role</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Actions</th>
+                <th className="px-5 py-4 font-semibold uppercase tracking-wider">Name</th>
+                <th className="px-5 py-4 font-semibold uppercase tracking-wider">Email</th>
+                <th className="px-5 py-4 font-semibold uppercase tracking-wider">Role</th>
+                <th className="px-5 py-4 font-semibold uppercase tracking-wider">Status</th>
+                <th className="px-5 py-4 font-semibold uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-800">
               {users.map((u) => (
-                <tr key={u.id} className="border-t border-slate-100">
-                  <td className="px-4 py-3">{u.name}</td>
-                  <td className="px-4 py-3">{u.email}</td>
-                  <td className="px-4 py-3 capitalize">{u.role}</td>
-                  <td className="px-4 py-3">{u.is_active ? "Active" : "Disabled"}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
+                <tr key={u.id} className="hover:bg-gray-800/20 transition-colors">
+                  <td className="px-5 py-4 font-medium text-gray-300">{u.name}</td>
+                  <td className="px-5 py-4 text-gray-400">{u.email}</td>
+                  <td className="px-5 py-4">
+                    <span className="capitalize inline-flex items-center rounded-md bg-indigo-400/10 px-2 py-1 text-xs font-medium text-indigo-400 ring-1 ring-inset ring-indigo-400/30">
+                      {u.role}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4">
+                    <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${u.is_active ? 'bg-emerald-400/10 text-emerald-400 ring-emerald-400/30' : 'bg-rose-400/10 text-rose-400 ring-rose-400/30'}`}>
+                      {u.is_active ? "Active" : "Disabled"}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex gap-3">
                       <button
-                        className="rounded border border-slate-300 px-2 py-1"
+                        className="text-gray-400 hover:text-white transition-colors"
                         onClick={() => void toggleStatus(u.id, u.is_active)}
                       >
-                        Toggle
+                        {u.is_active ? "Disable" : "Enable"}
                       </button>
-                      <button className="rounded bg-rose-600 px-2 py-1 text-white" onClick={() => void removeUser(u.id)}>
+                      <button className="text-rose-500 hover:text-rose-400 transition-colors" onClick={() => void removeUser(u.id)}>
                         Delete
                       </button>
                     </div>
