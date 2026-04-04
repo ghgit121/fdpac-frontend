@@ -23,9 +23,11 @@ export default function Navbar({ role }: NavbarProps) {
           <Link href="/dashboard" className="hover:text-brand-accent">
             Dashboard
           </Link>
-          <Link href="/records" className="hover:text-brand-accent">
-            Records
-          </Link>
+          {(role === "admin" || role === "analyst") && (
+            <Link href="/records" className="hover:text-brand-accent">
+              Records
+            </Link>
+          )}
           {role === "admin" && (
             <Link href="/users" className="hover:text-brand-accent">
               Users
