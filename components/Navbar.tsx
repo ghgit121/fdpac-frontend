@@ -16,26 +16,52 @@ export default function Navbar({ role }: NavbarProps) {
   };
 
   return (
-    <nav className="border-b border-slate-200 bg-white">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <h1 className="text-lg font-semibold text-brand-dark">FDPAC Dashboard</h1>
-        <div className="flex items-center gap-4 text-sm font-medium">
-          <Link href="/dashboard" className="hover:text-brand-accent">
-            Dashboard
+    <nav className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white shadow-sm transition-all">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <span className="text-xl font-bold tracking-tight text-indigo-600 hover:text-indigo-500 transition-colors">
+              FDPAC Dashboard
+            </span>
           </Link>
-          {(role === "admin" || role === "analyst") && (
-            <Link href="/records" className="hover:text-brand-accent">
-              Records
+        </div>
+
+        <div className="flex items-center gap-6 text-sm font-medium text-slate-600">
+          <div className="hidden space-x-6 sm:flex">
+            <Link 
+              href="/dashboard" 
+              className="hover:text-indigo-600 transition-colors py-2"
+            >
+              Dashboard
             </Link>
-          )}
-          {role === "admin" && (
-            <Link href="/users" className="hover:text-brand-accent">
-              Users
-            </Link>
-          )}
-          <button onClick={onLogout} className="rounded-md bg-slate-900 px-3 py-1.5 text-white">
-            Logout
-          </button>
+            
+            {(role === "admin" || role === "analyst") && (
+              <Link 
+                href="/records" 
+                className="hover:text-indigo-600 transition-colors py-2"
+              >
+                Records
+              </Link>
+            )}
+            
+            {role === "admin" && (
+              <Link 
+                href="/users" 
+                className="hover:text-indigo-600 transition-colors py-2"
+              >
+                Users
+              </Link>
+            )}
+          </div>
+
+          <div className="flex items-center gap-4 border-l border-slate-200 pl-6">
+            <button 
+              onClick={onLogout} 
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 transition-all"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </div>
     </nav>

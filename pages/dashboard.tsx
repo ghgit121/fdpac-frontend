@@ -13,7 +13,14 @@ export default function DashboardPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [role, setRole] = useState<string | null>(null);
-  const [summary, setSummary] = useState({ total_income: 0, total_expense: 0, net_balance: 0 });
+  const [summary, setSummary] = useState({ 
+    total_income: 0, 
+    total_expense: 0, 
+    net_balance: 0,
+    tx_count: 0,
+    avg_expense: 0,
+    highest_expense_category: "None"
+  });
   const [categories, setCategories] = useState<any[]>([]);
   const [trends, setTrends] = useState<any[]>([]);
   const [weeklyTrends, setWeeklyTrends] = useState<any[]>([]);
@@ -69,6 +76,9 @@ export default function DashboardPage() {
           totalIncome={summary.total_income}
           totalExpense={summary.total_expense}
           netBalance={summary.net_balance}
+          txCount={summary.tx_count}
+          avgExpense={summary.avg_expense}
+          highestExpenseCategory={summary.highest_expense_category}
         />
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -108,10 +118,12 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <section>
-          <h2 className="mb-3 text-lg font-semibold">Recent Transactions</h2>
-          <TransactionTable transactions={recent} />
-        </section>
+        {role !== "viewer" && (
+          <section>
+            <h2 className="mb-3 text-lg font-semibold text-slate-800">Recent Transactions</h2>
+            <TransactionTable transactions={recent} />
+          </section>
+        )}
       </div>
     </main>
   );
